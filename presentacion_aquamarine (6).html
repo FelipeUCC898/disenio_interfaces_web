@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diseño de Interfaces — Grupo 4</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700;900&family=Playfair+Display:ital,wght@1,700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#001A1C;
+  --v1:#002F32;--v2:#2F7175;--v3:#63B9BE;--v4:#6FCCD1;
+  --neon:#6FCCD1;
+  --pk:#2F7175;--pk2:#63B9BE;
+  --cy:#6FCCD1;--cy2:#D1F8FB;
+  --yw:#D1F8FB;--or:#63B9BE;
+  --gn:#6FCCD1;
+  --wh:#F0FAFA;--gr:#6FCCD1;
+  --glass:rgba(111,204,209,0.06);
+  --glass-b:rgba(111,204,209,0.14);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:'Outfit',sans-serif;cursor:none}
+
+/* ── CURSOR ── */
+#CUR{position:fixed;z-index:9999;pointer-events:none;top:0;left:0}
+#CUR canvas{display:block}
+
+/* ── MASTER CANVAS (bg effects) ── */
+#MASTER{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── SLIDES ── */
+#DECK{position:fixed;inset:0;z-index:1}
+.slide{position:absolute;inset:0;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;will-change:transform,opacity,filter}
+.slide.LIVE{opacity:1;pointer-events:all}
+
+/* slide transition classes set by JS */
+.slide.EXIT{animation:sExit .7s cubic-bezier(.76,0,.24,1) forwards}
+.slide.ENTER{animation:sEnter .7s cubic-bezier(.16,1,.3,1) forwards;opacity:1;pointer-events:all}
+@keyframes sExit{0%{opacity:1;transform:scale(1) translateY(0) rotateX(0deg);filter:blur(0)}
+  100%{opacity:0;transform:scale(.9) translateY(-60px) rotateX(8deg);filter:blur(12px)}}
+@keyframes sEnter{0%{opacity:0;transform:scale(1.08) translateY(60px) rotateX(-8deg);filter:blur(16px)}
+  100%{opacity:1;transform:scale(1) translateY(0) rotateX(0deg);filter:blur(0)}}
+
+/* ── STAGGER REVEALS ──
+   Base state: invisible only when slide is NOT live.
+   Once .LIVE is added, animation fires and holds final state via both fill-mode.
+   JS clears inline animation before re-triggering so the keyframe reruns cleanly.
+── */
+.slide:not(.LIVE) [data-v],
+.slide:not(.LIVE) [data-vl],
+.slide:not(.LIVE) [data-vr],
+.slide:not(.LIVE) [data-vs],
+.slide:not(.LIVE) [data-vf],
+.slide:not(.LIVE) [data-vc],
+.slide:not(.LIVE) [data-vw]{opacity:0}
+
+.slide.LIVE [data-v] {animation:vIn  .95s cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+.slide.LIVE [data-vl]{animation:vlIn .95s cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+.slide.LIVE [data-vr]{animation:vrIn .95s cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+.slide.LIVE [data-vs]{animation:vsIn 1s  cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+.slide.LIVE [data-vf]{animation:vfIn 1s  cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+.slide.LIVE [data-vc]{animation:vcIn 1s  cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+.slide.LIVE [data-vw]{animation:vwIn 1.1s cubic-bezier(.16,1,.3,1) calc(var(--i,.05)*1s) both}
+
+@keyframes vIn {from{opacity:0;transform:translateY(40px)}     to{opacity:1;transform:none}}
+@keyframes vlIn{from{opacity:0;transform:translateX(-60px)}    to{opacity:1;transform:none}}
+@keyframes vrIn{from{opacity:0;transform:translateX(60px)}     to{opacity:1;transform:none}}
+@keyframes vsIn{from{opacity:0;transform:scale(.6) rotate(-4deg)} to{opacity:1;transform:none}}
+@keyframes vfIn{from{opacity:0;transform:translateY(60px) rotateX(20deg);transform-origin:top center} to{opacity:1;transform:none}}
+@keyframes vcIn{from{opacity:0;clip-path:inset(0 100% 0 0)}   to{opacity:1;clip-path:inset(0 0% 0 0)}}
+@keyframes vwIn{from{opacity:0;transform:translateY(80px) scale(.8);filter:blur(8px)} to{opacity:1;transform:none;filter:blur(0)}}
+
+/* ── COVER S1 SPECIFIC ANIMATIONS ── */
+.s1-eyebrow[data-v]{animation-name:s1Eyebrow!important}
+@keyframes s1Eyebrow{from{opacity:0;transform:translateX(-80px) scale(.9)} to{opacity:1;transform:none}}
+.s1-line1[data-v]{animation-name:s1L1!important}
+@keyframes s1L1{from{opacity:0;transform:translateX(-100px) skewX(-5deg)} to{opacity:1;transform:none}}
+.s1-line2[data-v]{animation-name:s1L2!important}
+@keyframes s1L2{from{opacity:0;transform:translateX(100px) skewX(5deg)} to{opacity:1;transform:none}}
+.s1-line3[data-v]{animation-name:s1L3!important}
+@keyframes s1L3{from{opacity:0;transform:translateY(60px) scale(.85)} to{opacity:1;transform:none}}
+.s1-sub[data-v]{animation-name:subIn!important;animation-duration:1.2s!important}
+@keyframes subIn{from{opacity:0;transform:translateY(30px);filter:blur(6px)} to{opacity:1;transform:none;filter:blur(0)}}
+.s1-names[data-v]{animation-name:namesIn!important}
+@keyframes namesIn{from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none}}
+/* Separator draws itself */
+.s1-hr-anim{width:0;height:2px;background:linear-gradient(90deg,#6FCCD1,transparent);opacity:0}
+.slide.LIVE .s1-hr-anim{animation:hrDraw 1s ease .9s both}
+@keyframes hrDraw{from{width:0;opacity:0} to{width:60px;opacity:1}}
+/* Orb scene */
+.s1-right[data-vs]{animation-name:orbIn!important;animation-duration:1.4s!important}
+@keyframes orbIn{from{opacity:0;transform:scale(.5) translateX(80px) rotate(10deg);filter:blur(12px)} to{opacity:1;transform:none;filter:blur(0)}}
+
+/* ── GLITCH on title ── */
+.glitch{position:relative}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;inset:0;display:block;font-family:inherit;font-size:inherit;letter-spacing:inherit;line-height:inherit}
+.glitch::before{color:var(--cy);clip-path:polygon(0 30%,100% 30%,100% 50%,0 50%);animation:glitch1 4s 1.2s infinite}
+.glitch::after{color:var(--pk);clip-path:polygon(0 65%,100% 65%,100% 80%,0 80%);animation:glitch2 4s 1.4s infinite}
+@keyframes glitch1{
+  0%,90%,100%{transform:none;opacity:0}
+  91%{transform:translateX(-4px);opacity:.7}
+  93%{transform:translateX(4px);opacity:.5}
+  95%{transform:translateX(-2px);opacity:.6}
+  97%{transform:none;opacity:0}
+}
+@keyframes glitch2{
+  0%,92%,100%{transform:none;opacity:0}
+  93%{transform:translateX(6px);opacity:.6}
+  95%{transform:translateX(-3px);opacity:.4}
+  97%{transform:none;opacity:0}
+}
+
+/* ── SCAN LINE on s1 ── */
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.4),transparent);pointer-events:none;z-index:5;animation:scan 3s linear 1s infinite}
+@keyframes scan{0%{top:-2px;opacity:0}5%{opacity:1}95%{opacity:.3}100%{top:100%;opacity:0}}
+
+/* ── COUNTER NUMBER animate ── */
+@keyframes countIn{
+  from{opacity:0;transform:translateY(-30px) scale(1.3)}
+  to{opacity:1;transform:none}
+}
+.s8-sn{animation:countIn .8s cubic-bezier(.16,1,.3,1) both}
+.s8-sn:nth-child(1){animation-delay:.5s}
+
+/* ── PROGRESS BAR LINE appears ── */
+.neon-line[data-vs]{transform:scaleX(0);transform-origin:left;opacity:1}
+.slide.LIVE .neon-line[data-vs]{animation:lineGrow 1.2s cubic-bezier(.16,1,.3,1) calc(var(--i,.1)*1s) forwards}
+@keyframes lineGrow{to{transform:scaleX(1);opacity:1}}
+
+/* ── S3: cards stagger from bottom ── */
+#s3:not(.LIVE) .card3d{opacity:0;transform:translateY(80px) scale(.9)}
+#s3.LIVE .card3d:nth-child(1){animation:cardBounce .9s cubic-bezier(.16,1,.3,1) .15s both}
+#s3.LIVE .card3d:nth-child(2){animation:cardBounce .9s cubic-bezier(.16,1,.3,1) .28s both}
+#s3.LIVE .card3d:nth-child(3){animation:cardBounce .9s cubic-bezier(.16,1,.3,1) .41s both}
+#s3.LIVE .card3d:nth-child(4){animation:cardBounce .9s cubic-bezier(.16,1,.3,1) .54s both}
+@keyframes cardBounce{from{opacity:0;transform:translateY(80px) scale(.9)} to{opacity:1;transform:none}}
+
+/* ── S4: ventaja cards pop in ── */
+#s4:not(.LIVE) .vc2{opacity:0;transform:scale(.6) translateY(40px)}
+#s4.LIVE .vc2:nth-child(1){animation:vcPop 1s cubic-bezier(.16,1,.3,1) .1s both}
+#s4.LIVE .vc2:nth-child(2){animation:vcPop 1s cubic-bezier(.16,1,.3,1) .2s both}
+#s4.LIVE .vc2:nth-child(3){animation:vcPop 1s cubic-bezier(.16,1,.3,1) .3s both}
+#s4.LIVE .vc2:nth-child(4){animation:vcPop 1s cubic-bezier(.16,1,.3,1) .4s both}
+#s4.LIVE .vc2:nth-child(5){animation:vcPop 1s cubic-bezier(.16,1,.3,1) .5s both}
+#s4.LIVE .vc2:nth-child(6){animation:vcPop 1s cubic-bezier(.16,1,.3,1) .6s both}
+@keyframes vcPop{from{opacity:0;transform:scale(.6) translateY(40px)} to{opacity:1;transform:none}}
+
+/* ── S5: practices slide in from right ── */
+#s5:not(.LIVE) .pr2{opacity:0;transform:translateX(80px)}
+#s5.LIVE .pr2:nth-child(1){animation:prSlide .8s cubic-bezier(.16,1,.3,1) .1s both}
+#s5.LIVE .pr2:nth-child(2){animation:prSlide .8s cubic-bezier(.16,1,.3,1) .22s both}
+#s5.LIVE .pr2:nth-child(3){animation:prSlide .8s cubic-bezier(.16,1,.3,1) .34s both}
+#s5.LIVE .pr2:nth-child(4){animation:prSlide .8s cubic-bezier(.16,1,.3,1) .46s both}
+#s5.LIVE .pr2:nth-child(5){animation:prSlide .8s cubic-bezier(.16,1,.3,1) .58s both}
+@keyframes prSlide{from{opacity:0;transform:translateX(80px)} to{opacity:1;transform:none}}
+
+/* ── S6: example cards fan in ── */
+#s6:not(.LIVE) .excrd{opacity:0;transform:translateY(60px) scale(.9) rotate(-2deg)}
+#s6.LIVE .excrd:nth-child(1){animation:fanIn 1s cubic-bezier(.16,1,.3,1) .1s both}
+#s6.LIVE .excrd:nth-child(2){animation:fanIn 1s cubic-bezier(.16,1,.3,1) .25s both}
+#s6.LIVE .excrd:nth-child(3){animation:fanIn 1s cubic-bezier(.16,1,.3,1) .4s both}
+@keyframes fanIn{from{opacity:0;transform:translateY(60px) scale(.9) rotate(-2deg)} to{opacity:1;transform:none}}
+
+/* ── S7: tools drop in ── */
+#s7:not(.LIVE) .tc2{opacity:0;transform:translateY(-50px) scale(.85);filter:blur(4px)}
+#s7.LIVE .tc2:nth-child(1){animation:toolDrop .8s cubic-bezier(.16,1,.3,1) .08s both}
+#s7.LIVE .tc2:nth-child(2){animation:toolDrop .8s cubic-bezier(.16,1,.3,1) .18s both}
+#s7.LIVE .tc2:nth-child(3){animation:toolDrop .8s cubic-bezier(.16,1,.3,1) .28s both}
+#s7.LIVE .tc2:nth-child(4){animation:toolDrop .8s cubic-bezier(.16,1,.3,1) .38s both}
+#s7.LIVE .tc2:nth-child(5){animation:toolDrop .8s cubic-bezier(.16,1,.3,1) .48s both}
+#s7.LIVE .tc2:nth-child(6){animation:toolDrop .8s cubic-bezier(.16,1,.3,1) .58s both}
+@keyframes toolDrop{from{opacity:0;transform:translateY(-50px) scale(.85);filter:blur(4px)} to{opacity:1;transform:none;filter:blur(0)}}
+
+/* ── S8: stats + takeaways ── */
+#s8:not(.LIVE) .s8-stat{opacity:0;transform:translateY(40px) scale(.8)}
+#s8.LIVE .s8-stat:nth-child(1){animation:statIn 1s cubic-bezier(.16,1,.3,1) .4s both}
+#s8.LIVE .s8-stat:nth-child(2){animation:statIn 1s cubic-bezier(.16,1,.3,1) .55s both}
+#s8.LIVE .s8-stat:nth-child(3){animation:statIn 1s cubic-bezier(.16,1,.3,1) .7s both}
+#s8.LIVE .s8-stat:nth-child(4){animation:statIn 1s cubic-bezier(.16,1,.3,1) .85s both}
+@keyframes statIn{from{opacity:0;transform:translateY(40px) scale(.8)} to{opacity:1;transform:none}}
+#s8:not(.LIVE) .s8-take{opacity:0;transform:translateY(30px)}
+#s8.LIVE .s8-take:nth-child(1){animation:takeIn .9s cubic-bezier(.16,1,.3,1) 1s both}
+#s8.LIVE .s8-take:nth-child(2){animation:takeIn .9s cubic-bezier(.16,1,.3,1) 1.12s both}
+#s8.LIVE .s8-take:nth-child(3){animation:takeIn .9s cubic-bezier(.16,1,.3,1) 1.24s both}
+@keyframes takeIn{from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:none}}
+
+/* ── CONTINUOUS AMBIENT ANIMATIONS ── */
+/* subtle ambient glow per slide — uses a child div, not ::before so it doesn't interfere */
+@keyframes ambientPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.4}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.8}}
+
+/* ── SHARED ELEMENTS ── */
+.pill{display:inline-flex;align-items:center;gap:8px;background:rgba(111,204,209,.12);border:1px solid rgba(111,204,209,.35);padding:6px 18px;border-radius:100px;color:var(--yw);font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+.pill-dot{width:7px;height:7px;background:var(--yw);border-radius:50%;box-shadow:0 0 8px var(--yw);animation:pd 2s infinite}
+@keyframes pd{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.5)}}
+
+.glasscard{background:var(--glass);border:1px solid var(--glass-b);backdrop-filter:blur(20px);border-radius:16px;position:relative;overflow:hidden}
+.glasscard::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 60%);pointer-events:none}
+
+.neon-line{height:2px;background:linear-gradient(90deg,transparent,#6FCCD1,#D1F8FB,transparent);box-shadow:0 0 12px rgba(111,204,209,.6);border-radius:1px}
+
+/* ── NOISE OVERLAY ── */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");opacity:.025;pointer-events:none;z-index:999}
+
+/* ── PROGRESS ── */
+#PROG{position:fixed;bottom:0;left:0;height:3px;z-index:500;transition:width .8s cubic-bezier(.16,1,.3,1);background:linear-gradient(90deg,#2F7175,#63B9BE,#D1F8FB);box-shadow:0 0 12px rgba(99,185,190,.5)}
+#DOTS{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:500}
+.dot{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.18);cursor:pointer;transition:all .4s ease}
+.dot.on{width:30px;background:var(--yw);box-shadow:0 0 10px var(--yw)}
+#HINT{position:fixed;bottom:18px;left:24px;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.15);z-index:500;letter-spacing:2px}
+#CTR{position:fixed;bottom:18px;right:24px;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.2);z-index:500;letter-spacing:3px}
+#CTR b{color:var(--yw)}
+
+/* ══════════════ S1 — COVER ══════════════ */
+#s1{background:radial-gradient(ellipse 120% 80% at 65% 40%,#012a2d 0%,var(--ink) 70%)}
+.s1-wrap{width:100%;height:100%;display:flex;align-items:center;padding:0 8vw;position:relative;z-index:2}
+.s1-left{width:52%;display:flex;flex-direction:column;gap:0}
+.s1-right{width:48%;display:flex;align-items:center;justify-content:center}
+.s1-eyebrow{margin-bottom:24px}
+.s1-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.8rem,8.5vw,8rem);line-height:.85;letter-spacing:1px;color:var(--wh)}
+.s1-title .line2{background:linear-gradient(90deg,#6FCCD1,#D1F8FB);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.s1-title .line3{-webkit-text-stroke:2px #63B9BE;color:transparent}
+.s1-sub{margin-top:22px;font-size:23px;color:var(--v4);line-height:1.7;max-width:420px;font-weight:300}
+.s1-sep{width:50px;height:1px;background:linear-gradient(90deg,#6FCCD1,transparent);margin:20px 0}
+.s1-names{font-size:23px;color:var(--gr);line-height:2.2;letter-spacing:.5px}
+.s1-date{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.18);letter-spacing:3px}
+
+/* Holographic orb */
+.orb-scene{position:relative;width:380px;height:380px}
+.orb-ring{position:absolute;border-radius:50%;border:1px solid;animation:orbitRing linear infinite}
+.orb-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+@keyframes orbitRing{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Floating UI chips */
+.chip{position:absolute;background:rgba(10,5,30,.85);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(16px);border-radius:10px;padding:10px 14px;animation:chipFloat ease-in-out infinite}
+@keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.chip-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;line-height:1}
+.chip-lbl{font-size:9px;color:var(--gr);letter-spacing:1px;margin-top:2px}
+
+/* ══════════════ S1B — IMÁGENES ══════════════ */
+#s1b{background:radial-gradient(ellipse 120% 80% at 50% 50%,#012a2d 0%,var(--ink) 70%)}
+.s1b-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 8vw;gap:40px}
+.s1b-img-container{flex:1;display:flex;flex-direction:column;align-items:center;gap:20px;position:relative;cursor:pointer}
+.s1b-img-container::after{content:'🔍';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;opacity:0;transition:opacity .3s ease;pointer-events:none;text-shadow:0 0 20px rgba(0,0,0,.8)}
+.s1b-img-container:hover::after{opacity:1}
+.s1b-img-container img{width:100%;height:auto;max-height:60vh;object-fit:contain;border-radius:16px;border:2px solid var(--glass-b);box-shadow:0 8px 32px rgba(0,0,0,.4);transition:transform .4s ease,box-shadow .4s ease,filter .3s ease}
+.s1b-img-container:hover img{transform:translateY(-8px) scale(1.05);box-shadow:0 16px 48px rgba(111,204,209,.3);filter:brightness(1.2)}
+.s1b-label{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--cy);letter-spacing:2px;text-shadow:0 0 20px var(--cy);pointer-events:none}
+#s1b:not(.LIVE) .s1b-img-container{opacity:0;transform:translateY(60px) scale(.9)}
+#s1b.LIVE .s1b-img-container:nth-child(1){animation:imgSlide 1s cubic-bezier(.16,1,.3,1) .2s both}
+#s1b.LIVE .s1b-img-container:nth-child(2){animation:imgSlide 1s cubic-bezier(.16,1,.3,1) .4s both}
+#s1b.LIVE .s1b-img-container:nth-child(3){animation:imgSlide 1s cubic-bezier(.16,1,.3,1) .6s both}
+@keyframes imgSlide{from{opacity:0;transform:translateY(60px) scale(.9)} to{opacity:1;transform:none}}
+
+/* ── IMAGE MODAL ── */
+#imgModal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9998;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .4s ease;backdrop-filter:blur(10px)}
+#imgModal.show{display:flex;opacity:1}
+#imgModal img{max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(111,204,209,.3);animation:modalZoom .5s cubic-bezier(.16,1,.3,1);border:2px solid var(--cy)}
+@keyframes modalZoom{from{opacity:0;transform:scale(.8) rotateX(10deg)} to{opacity:1;transform:scale(1) rotateX(0deg)}}
+.modal-back-btn{position:fixed;top:40px;left:40px;width:60px;height:60px;background:var(--glass);border:2px solid var(--cy);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s ease;z-index:9999;backdrop-filter:blur(20px)}
+.modal-back-btn:hover{background:var(--cy);transform:scale(1.1) rotate(-5deg);box-shadow:0 0 30px var(--cy)}
+.modal-back-btn::before{content:'←';font-size:28px;color:var(--cy);font-weight:bold;transition:color .3s ease}
+.modal-back-btn:hover::before{color:var(--ink)}
+.modal-back-btn::after{content:'Volver';position:absolute;left:80px;top:50%;transform:translateY(-50%);font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--cy);letter-spacing:2px;white-space:nowrap;opacity:0;transition:opacity .3s ease}
+.modal-back-btn:hover::after{opacity:1}
+
+/* ══════════════ S3 — CÓMO MEJORAN ══════════════ */
+#s3{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(47,113,117,.12) 0%,var(--ink) 70%)}
+.s3-wrap{width:100%;padding:4.5vh 7vw;z-index:2;position:relative}
+.sh{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,4.5vw,4rem);color:var(--wh);letter-spacing:2px;text-align:center;margin-bottom:3.5vh}
+.sh .cx{background:linear-gradient(90deg,var(--cy),var(--cy2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sh .px{background:linear-gradient(90deg,var(--pk),var(--pk2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sh .yx{color:var(--yw)}
+.sh .gx{color:var(--gn)}
+
+.g4{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card3d{padding:26px 28px;border-radius:18px;background:var(--glass);border:1px solid var(--glass-b);position:relative;overflow:hidden;cursor:default;transition:border-color .4s ease;transform-style:preserve-3d}
+/* auto glow pulse instead of hover */
+.card3d::after{content:'';position:absolute;inset:0;border-radius:18px;background:var(--cg);opacity:0;animation:cardGlow 4s ease-in-out infinite;pointer-events:none}
+.card3d:nth-child(1)::after{animation-delay:0s}
+.card3d:nth-child(2)::after{animation-delay:1s}
+.card3d:nth-child(3)::after{animation-delay:2s}
+.card3d:nth-child(4)::after{animation-delay:3s}
+@keyframes cardGlow{0%,100%{opacity:0}50%{opacity:.7}}
+.cn{font-family:'Bebas Neue',sans-serif;font-size:4.5rem;position:absolute;top:14px;right:20px;color:var(--cs);opacity:.12;line-height:1}
+.ci{font-size:2.4rem;margin-bottom:14px;display:block;filter:drop-shadow(0 0 8px var(--cs))}
+.card3d h3{font-size:22px;font-weight:700;color:var(--wh);margin-bottom:8px}
+.card3d p{font-size:18px;color:var(--gr);line-height:1.6;position:relative;z-index:1}
+.ctag{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:3px 12px;border-radius:100px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:var(--ctbg);color:var(--cs)}
+.cstat{position:absolute;bottom:16px;right:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cs);background:rgba(0,0,0,.4);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.07);padding:4px 10px;border-radius:6px;font-weight:700}
+
+/* ══════════════ S4 — VENTAJAS ══════════════ */
+#s4{background:linear-gradient(135deg,#08001C 0%,#0A0028 100%)}
+.g6{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.vc2{padding:20px 18px;border-radius:14px;background:var(--glass);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;cursor:default;position:relative;overflow:hidden;animation:vcFloat 5s ease-in-out infinite}
+.vc2:nth-child(1){animation-delay:0s}
+.vc2:nth-child(2){animation-delay:.6s}
+.vc2:nth-child(3){animation-delay:1.2s}
+.vc2:nth-child(4){animation-delay:1.8s}
+.vc2:nth-child(5){animation-delay:2.4s}
+.vc2:nth-child(6){animation-delay:3s}
+@keyframes vcFloat{0%,100%{transform:translateY(0);box-shadow:0 4px 20px -8px var(--vc)}50%{transform:translateY(-6px);box-shadow:0 16px 40px -8px var(--vc)}}
+.vc2::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--vc);animation:vcBar 5s ease-in-out infinite}
+.vc2:nth-child(1)::after{animation-delay:0s}
+.vc2:nth-child(2)::after{animation-delay:.6s}
+.vc2:nth-child(3)::after{animation-delay:1.2s}
+.vc2:nth-child(4)::after{animation-delay:1.8s}
+.vc2:nth-child(5)::after{animation-delay:2.4s}
+.vc2:nth-child(6)::after{animation-delay:3s}
+@keyframes vcBar{0%,100%{transform:scaleX(.3);opacity:.4}50%{transform:scaleX(1);opacity:1}}
+.vc2-ico{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--vc-bg);border:1px solid var(--vc-bd)}
+.vc2-big{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--vc);line-height:1;text-shadow:0 0 20px var(--vc)}
+.vc2 h4{font-size:27px;font-weight:700;color:var(--wh)}
+.vc2 p{font-size:25px;color:var(--gr);line-height:1.5}
+
+/* ══════════════ S5 — PRÁCTICAS ══════════════ */
+#s5{background:radial-gradient(ellipse 80% 100% at 100% 50%,rgba(99,185,190,.08) 0%,var(--ink) 60%)}
+.s5-wrap{width:100%;height:100%;display:flex}
+.s5-left{width:37%;display:flex;flex-direction:column;justify-content:center;padding:8vh 3vw 8vh 7vw}
+.s5-ghost{font-family:'Bebas Neue',sans-serif;font-size:16vw;color:rgba(99,185,190,.08);line-height:1;pointer-events:none}
+.s5-h{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,5vw,5rem);color:var(--wh);letter-spacing:3px;line-height:.85}
+.s5-h .gr2{background:linear-gradient(90deg,#6FCCD1,#D1F8FB);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block}
+.s5-sub{margin-top:16px;font-size:25px;color:var(--gr);line-height:1.7;max-width:260px}
+
+/* Animated radar chart */
+.radar-wrap{margin-top:24px;display:flex;justify-content:flex-start}
+
+.s5-right{width:63%;display:flex;flex-direction:column;justify-content:center;padding:6vh 7vw 6vh 2vw;gap:12px}
+.pr2{display:flex;align-items:flex-start;gap:16px;padding:15px 18px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-b);cursor:default;position:relative;overflow:hidden}
+/* auto animated left bar */
+.pr2::before{content:'';position:absolute;left:0;inset-block:0;width:3px;background:var(--prc);animation:prBar 3s ease-in-out infinite}
+.pr2:nth-child(1)::before{animation-delay:0s}
+.pr2:nth-child(2)::before{animation-delay:.4s}
+.pr2:nth-child(3)::before{animation-delay:.8s}
+.pr2:nth-child(4)::before{animation-delay:1.2s}
+.pr2:nth-child(5)::before{animation-delay:1.6s}
+@keyframes prBar{0%,100%{transform:scaleY(.3);opacity:.3}50%{transform:scaleY(1);opacity:1}}
+.pr2-n{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--prc);width:30px;flex-shrink:0;line-height:1;text-shadow:0 0 16px var(--prc)}
+.pr2-body h4{font-size:25px;font-weight:700;color:var(--wh);margin-bottom:2px}
+.pr2-body p{font-size:25px;color:var(--gr);line-height:1.55}
+.pr2-badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--prc);opacity:.55;letter-spacing:1px;flex-shrink:0;align-self:center;text-transform:uppercase}
+
+/* ══════════════ S6 — EJEMPLOS ══════════════ */
+#s6{background:linear-gradient(135deg,#001A1C 0%,#001A1C 100%)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.excrd{border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.07);cursor:default;position:relative;animation:excFloat 6s ease-in-out infinite}
+.excrd:nth-child(1){animation-delay:0s}
+.excrd:nth-child(2){animation-delay:1.5s}
+.excrd:nth-child(3){animation-delay:3s}
+@keyframes excFloat{0%,100%{transform:translateY(0);box-shadow:0 4px 20px -8px var(--exc)}50%{transform:translateY(-8px);box-shadow:0 24px 50px -12px var(--exc)}}
+.ex-hero{height:140px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--exbg)}
+/* Animated mesh inside hero */
+.ex-mesh{position:absolute;inset:0;opacity:.4}
+.ex-logo{font-family:'Bebas Neue',sans-serif;font-size:3.8rem;letter-spacing:5px;color:rgba(255,255,255,.9);position:relative;z-index:1;text-shadow:0 0 40px rgba(255,255,255,.5)}
+.ex-body{padding:20px 22px;background:rgba(8,4,20,1)}
+.ex-tag{display:inline-block;padding:3px 10px;border-radius:100px;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;background:var(--exc-bg);color:var(--exc)}
+.ex-body h4{font-size:25px;font-weight:700;color:var(--wh);margin-bottom:10px}
+.ex-pts{list-style:none;display:flex;flex-direction:column;gap:5px}
+.ex-pts li{font-size:25px;color:var(--gr);display:flex;align-items:center;gap:8px}
+.ex-pts li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--exc);flex-shrink:0;box-shadow:0 0 6px var(--exc)}
+.ex-bar{height:2px;background:var(--exc);margin-top:12px;box-shadow:0 0 8px var(--exc);animation:exBar 6s ease-in-out infinite}
+.excrd:nth-child(1) .ex-bar{animation-delay:0s}
+.excrd:nth-child(2) .ex-bar{animation-delay:1.5s}
+.excrd:nth-child(3) .ex-bar{animation-delay:3s}
+@keyframes exBar{0%,100%{transform:scaleX(.15);transform-origin:left;opacity:.3}50%{transform:scaleX(1);opacity:1}}
+
+/* ══════════════ S7 — TOOLS ══════════════ */
+#s7{background:radial-gradient(ellipse 100% 80% at 50% 100%,rgba(111,204,209,.06) 0%,var(--ink) 60%)}
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tc2{padding:20px 18px;border-radius:14px;background:var(--glass);border:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden;cursor:default}
+.tc2-letter{position:absolute;right:-10px;bottom:-20px;font-family:'Bebas Neue',sans-serif;font-size:7rem;color:var(--tcol);opacity:.08;line-height:1;pointer-events:none}
+.tc2-dot{width:9px;height:9px;border-radius:50%;background:var(--tcol);box-shadow:0 0 10px var(--tcol);margin-bottom:10px;animation:pd 2s infinite}
+.tc2-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tc2-name{font-size:25px;font-weight:700;color:var(--wh)}
+.tc2-cat{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--tcol);padding:2px 8px;border:1px solid var(--tcol);border-radius:100px}
+.tc2 p{font-size:25px;color:var(--gr);line-height:1.55}
+.tc2-bar{height:2px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;margin-top:12px}
+/* bars auto-fill when slide is live */
+.tc2-fill{height:100%;background:var(--tcol);width:0;border-radius:1px;box-shadow:0 0 6px var(--tcol)}
+#s7.LIVE .tc2-fill{animation:barFill 1.4s cubic-bezier(.16,1,.3,1) both}
+#s7.LIVE .tc2:nth-child(1) .tc2-fill{animation-delay:.3s;--end:var(--pct)}
+#s7.LIVE .tc2:nth-child(2) .tc2-fill{animation-delay:.45s;--end:var(--pct)}
+#s7.LIVE .tc2:nth-child(3) .tc2-fill{animation-delay:.6s;--end:var(--pct)}
+#s7.LIVE .tc2:nth-child(4) .tc2-fill{animation-delay:.75s;--end:var(--pct)}
+#s7.LIVE .tc2:nth-child(5) .tc2-fill{animation-delay:.9s;--end:var(--pct)}
+#s7.LIVE .tc2:nth-child(6) .tc2-fill{animation-delay:1.05s;--end:var(--pct)}
+@keyframes barFill{from{width:0}to{width:var(--pct)}}
+
+/* ══════════════ S8 — CONCLUSIÓN ══════════════ */
+#s8{background:var(--ink)}
+.s8-wrap{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5vh 9vw;gap:20px;position:relative;z-index:2}
+.s8-eyebrow{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--v4);letter-spacing:4px;text-transform:uppercase}
+.s8-quote{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.2vw,2.8rem);color:var(--wh);line-height:1.35;max-width:840px;font-style:italic}
+.s8-quote em{font-style:normal;background:linear-gradient(90deg,#6FCCD1,#D1F8FB);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.s8-stats-row{display:flex;gap:0;border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;background:var(--glass)}
+.s8-stat{flex:1;padding:16px 12px;text-align:center;position:relative}
+.s8-stat+.s8-stat::before{content:'';position:absolute;left:0;top:15%;bottom:15%;width:1px;background:rgba(255,255,255,.07)}
+.s8-sn{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;line-height:1;margin-bottom:4px}
+.s8-sl{font-size:11px;color:var(--gr);letter-spacing:1px;line-height:1.4}
+.s8-takes{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.s8-take{padding:12px 18px;border-radius:10px;background:var(--glass);border:1px solid var(--glass-b);font-size:25px;color:var(--gr);display:flex;align-items:center;gap:10px;max-width:260px;text-align:left;transition:all .3s ease;cursor:default}
+.s8-tdot{width:7px;height:7px;border-radius:50%;background:var(--td);box-shadow:0 0 8px var(--td);flex-shrink:0}
+.s8-footer{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.1);letter-spacing:1px}
+
+/* ── TYPEWRITER ── */
+.tw::after{content:'|';animation:twBlink .7s step-end infinite;color:var(--cy)}
+@keyframes twBlink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Master canvas: aurora/nebula background -->
+<canvas id="MASTER"></canvas>
+
+<!-- Cursor canvas -->
+<div id="CUR"><canvas id="curCanvas" width="80" height="80"></canvas></div>
+
+<div id="DECK">
+
+<!-- ══════════════════════════════════════════
+     S1 — PORTADA
+══════════════════════════════════════════ -->
+<section class="slide LIVE" id="s1">
+  <!-- scan line effect -->
+  <div class="scan-line"></div>
+  <div class="s1-wrap">
+    <div class="s1-left">
+      <div class="pill s1-eyebrow" data-v style="--i:.05"><span class="pill-dot"></span>Grupo 4 · Interfaces Web · 2026</div>
+      <h1 class="s1-title">
+        <span class="s1-line1" data-v style="--i:.2;display:block">Diseño de</span>
+        <span class="line2 glitch s1-line2" data-v style="--i:.32;display:block" data-text="Interfaces">Interfaces</span>
+        <span class="line3 s1-line3" data-v style="--i:.44;display:block">Web</span>
+      </h1>
+      <p class="s1-sub" data-v style="--i:.6">Construyendo experiencias digitales que los usuarios aman, recuerdan y no pueden abandonar.</p>
+      <div class="s1-hr-anim" style="margin:18px 0"></div>
+      <p class="s1-names" data-v style="--i:.85">
+        Ramírez, Bryan A. &nbsp;·&nbsp; Araujo, Sara Y.<br>
+        Criollo, Andrés D. &nbsp;·&nbsp; Narvaez, Felipe &nbsp;·&nbsp; Estacio, Juan S.
+      </p>
+      <p class="s1-date" data-v style="--i:1">11 · 03 · 2026 &nbsp;/&nbsp; UNIVERSIDAD COOPERATIVA DE COLOMBIA</p>
+    </div>
+    <div class="s1-right" data-vs style="--i:.25">
+      <!-- Orb rings -->
+      <div class="orb-scene">
+        <div class="orb-ring" style="inset:0;border-color:rgba(111,204,209,.25);animation-duration:25s"></div>
+        <div class="orb-ring" style="inset:30px;border-color:rgba(111,204,209,.3);animation-duration:18s;animation-direction:reverse"></div>
+        <div class="orb-ring" style="inset:60px;border-color:rgba(47,113,117,.25);animation-duration:12s"></div>
+        <!-- SVG core illustration -->
+        <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 380 380">
+          <!-- Glow backdrop -->
+          <defs>
+            <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#2F7175" stop-opacity=".5"/>
+              <stop offset="100%" stop-color="#2F7175" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="cyGlow" cx="30%" cy="30%" r="60%">
+              <stop offset="0%" stop-color="#6FCCD1" stop-opacity=".3"/>
+              <stop offset="100%" stop-color="#6FCCD1" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="190" cy="190" r="130" fill="url(#orbGlow)"/>
+          <circle cx="190" cy="190" r="80" fill="url(#cyGlow)"/>
+
+          <!-- Browser window - floats -->
+          <g style="animation:float1 4s ease-in-out infinite">
+            <rect x="50" y="60" width="190" height="135" rx="12" fill="#001820" stroke="#2F7175" stroke-width="1.2"/>
+            <rect x="50" y="60" width="190" height="30" rx="12" fill="#002F32"/>
+            <rect x="50" y="78" width="190" height="12" fill="#002F32"/>
+            <circle cx="70" cy="75" r="5" fill="#63B9BE"/><circle cx="84" cy="75" r="5" fill="#D1F8FB"/><circle cx="98" cy="75" r="5" fill="#6FCCD1"/>
+            <rect x="118" y="69" width="100" height="12" rx="6" fill="#002F32"/>
+            <!-- content -->
+            <rect x="64" y="104" width="65" height="8" rx="3" fill="#63B9BE" opacity=".8"/>
+            <rect x="64" y="118" width="158" height="4" rx="2" fill="#1a3a3c" opacity=".6"/>
+            <rect x="64" y="128" width="130" height="4" rx="2" fill="#1a3a3c" opacity=".5"/>
+            <rect x="64" y="138" width="145" height="4" rx="2" fill="#1a3a3c" opacity=".4"/>
+            <!-- cards row -->
+            <rect x="64" y="152" width="70" height="30" rx="7" fill="#002F32"/>
+            <rect x="144" y="152" width="70" height="30" rx="7" fill="#002F32"/>
+            <rect x="68" y="158" width="36" height="4" rx="2" fill="#6FCCD1" opacity=".7"/>
+            <rect x="68" y="167" width="28" height="4" rx="2" fill="#2F7175" opacity=".5"/>
+            <rect x="148" y="158" width="36" height="4" rx="2" fill="#6FCCD1" opacity=".7"/>
+            <rect x="148" y="167" width="28" height="4" rx="2" fill="#2F7175" opacity=".5"/>
+          </g>
+          <!-- Phone - float2 -->
+          <g style="animation:float2 5s ease-in-out infinite">
+            <rect x="272" y="90" width="72" height="130" rx="14" fill="#080618" stroke="#6FCCD1" stroke-width="1"/>
+            <rect x="283" y="100" width="50" height="78" rx="8" fill="#001A1C"/>
+            <rect x="286" y="105" width="44" height="5" rx="2" fill="#6FCCD1" opacity=".6"/>
+            <rect x="286" y="115" width="34" height="3" rx="2" fill="#475569" opacity=".5"/>
+            <rect x="286" y="123" width="40" height="3" rx="2" fill="#475569" opacity=".4"/>
+            <rect x="286" y="131" width="30" height="3" rx="2" fill="#475569" opacity=".3"/>
+            <rect x="286" y="142" width="44" height="16" rx="5" fill="#6FCCD1" opacity=".85"/>
+            <rect x="294" y="148" width="28" height="3" rx="1.5" fill="white" opacity=".9"/>
+            <!-- notch -->
+            <rect x="299" y="97" width="18" height="6" rx="3" fill="#080618"/>
+          </g>
+          <!-- Stat card 1 — float3 -->
+          <g style="animation:float3 3.5s ease-in-out infinite">
+            <rect x="30" y="220" width="110" height="68" rx="10" fill="#001A1C" stroke="#D1F8FB" stroke-width=".8"/>
+            <text x="42" y="246" font-family="Bebas Neue" font-size="24" fill="#D1F8FB">88%</text>
+            <rect x="42" y="252" width="85" height="2.5" rx="1" fill="#D1F8FB" opacity=".2"/>
+            <rect x="42" y="252" width="73" height="2.5" rx="1" fill="#D1F8FB" opacity=".75"/>
+            <text x="42" y="270" font-family="Outfit" font-size="8" fill="#6FCCD1">no regresa tras mala UX</text>
+            <text x="42" y="280" font-family="Outfit" font-size="8" fill="#6FCCD1">— Sweor Research</text>
+          </g>
+          <!-- Stat card 2 — float4 -->
+          <g style="animation:float4 4.5s ease-in-out infinite">
+            <rect x="250" y="230" width="104" height="65" rx="10" fill="#001A1C" stroke="#00FF9D" stroke-width=".8"/>
+            <text x="262" y="256" font-family="Bebas Neue" font-size="24" fill="#D1F8FB">100x</text>
+            <rect x="262" y="261" width="80" height="2.5" rx="1" fill="#D1F8FB" opacity=".2"/>
+            <rect x="262" y="261" width="55" height="2.5" rx="1" fill="#D1F8FB" opacity=".75"/>
+            <text x="262" y="278" font-family="Outfit" font-size="8" fill="#6FCCD1">ROI por $1 en UX</text>
+            <text x="262" y="288" font-family="Outfit" font-size="8" fill="#6FCCD1">— Forrester Report</text>
+          </g>
+          <!-- Pulse center -->
+          <circle cx="190" cy="190" r="8" fill="#6FCCD1">
+            <animate attributeName="r" values="8;14;8" dur="2.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;.2;1" dur="2.5s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="190" cy="190" r="4" fill="white"/>
+          <!-- Connecting lines -->
+          <line x1="240" y1="127" x2="272" y2="155" stroke="#6FCCD1" stroke-width=".6" stroke-dasharray="4,4" opacity=".4">
+            <animate attributeName="stroke-dashoffset" from="0" to="8" dur="1s" repeatCount="indefinite"/>
+          </line>
+          <line x1="190" y1="195" x2="190" y2="220" stroke="#D1F8FB" stroke-width=".6" stroke-dasharray="4,4" opacity=".4">
+            <animate attributeName="stroke-dashoffset" from="0" to="8" dur="1s" repeatCount="indefinite"/>
+          </line>
+        </svg>
+        <!-- Floating chips -->
+        <div class="chip" style="top:5%;left:-8%;animation-duration:4s;animation-delay:.5s">
+          <div class="chip-val" style="color:#6FCCD1">UI</div>
+          <div class="chip-lbl">VISUAL DESIGN</div>
+        </div>
+        <div class="chip" style="bottom:12%;right:-5%;animation-duration:5s;animation-delay:1s">
+          <div class="chip-val" style="color:#63B9BE">UX</div>
+          <div class="chip-lbl">USER EXP.</div>
+        </div>
+        <div class="chip" style="bottom:5%;left:5%;animation-duration:3.5s;animation-delay:.2s">
+          <div class="chip-val" style="color:#D1F8FB">A11Y</div>
+          <div class="chip-lbl">ACCESSIBILITY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S1B — IMÁGENES
+══════════════════════════════════════════ -->
+<section class="slide" id="s1b">
+  <div class="s1b-wrap">
+    <div class="s1b-img-container" data-fullimg="sitios_web/1_elegante.PNG">
+      <img src="img/1.jpg" alt="Página 1" data-v style="--i:.1">
+      <div class="s1b-label" data-v style="--i:.15">pagina 1</div>
+    </div>
+    <div class="s1b-img-container" data-fullimg="sitios_web/2_play.PNG">
+      <img src="img/2.jpg" alt="Página 2" data-v style="--i:.2">
+      <div class="s1b-label" data-v style="--i:.25">pagina 2</div>
+    </div>
+    <div class="s1b-img-container" data-fullimg="sitios_web/3_civil.PNG">
+      <img src="img/3.png" alt="Página 3" data-v style="--i:.3">
+      <div class="s1b-label" data-v style="--i:.35">pagina3</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S3 — CÓMO MEJORAN
+══════════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div class="s3-wrap">
+    <h2 class="sh" data-v style="--i:.05">¿Cómo mejoran la <span class="cx">experiencia</span> del usuario?</h2>
+    <div class="g4">
+      <div class="card3d glasscard" style="--cs:#6FCCD1;--cg:linear-gradient(135deg,rgba(111,204,209,.1),transparent);--ctbg:rgba(111,204,209,.12)" data-v style="--i:.15">
+        <div class="cn">01</div>
+        <span class="ci">🧭</span>
+        <h3>Navegación Intuitiva</h3>
+        <p>Menús claros y flujos lógicos. El usuario nunca pregunta "¿y ahora qué hago?". La respuesta ya está en el diseño.</p>
+        <span class="ctag">UX FLOW <span style="opacity:.5">·</span> -40% BOUNCE</span>
+        <div class="cstat">-40% bounce rate</div>
+      </div>
+      <div class="card3d glasscard" style="--cs:#D1F8FB;--cg:linear-gradient(135deg,rgba(209,248,251,.08),transparent);--ctbg:rgba(209,248,251,.1)" data-v style="--i:.25">
+        <div class="cn">02</div>
+        <span class="ci">⚡</span>
+        <h3>Feedback en Tiempo Real</h3>
+        <p>Animaciones y mensajes que confirman cada acción al instante. Sin feedback, el usuario cree que la app está rota.</p>
+        <span class="ctag">MICRO-UI <span style="opacity:.5">·</span> +68% CONFIANZA</span>
+        <div class="cstat">+68% confianza</div>
+      </div>
+      <div class="card3d glasscard" style="--cs:#63B9BE;--cg:linear-gradient(135deg,rgba(99,185,190,.08),transparent);--ctbg:rgba(99,185,190,.12)" data-v style="--i:.35">
+        <div class="cn">03</div>
+        <span class="ci">🎨</span>
+        <h3>Consistencia Visual</h3>
+        <p>Mismo color, misma fuente, mismos patrones en toda la app. El usuario aprende el sistema una vez y lo usa siempre.</p>
+        <span class="ctag">DESIGN SYS <span style="opacity:.5">·</span> 3X RETENCIÓN</span>
+        <div class="cstat">3× retención</div>
+      </div>
+      <div class="card3d glasscard" style="--cs:#D1F8FB;--cg:linear-gradient(135deg,rgba(209,248,251,.06),transparent);--ctbg:rgba(209,248,251,.08)" data-v style="--i:.45">
+        <div class="cn">04</div>
+        <span class="ci">📱</span>
+        <h3>Diseño Responsivo</h3>
+        <p>Más del 60% del tráfico es móvil. Una interfaz que se adapta fluidamente a cualquier tamaño de pantalla.</p>
+        <span class="ctag">MOBILE FIRST <span style="opacity:.5">·</span> 60%+ MÓVIL</span>
+        <div class="cstat">60%+ mobile</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S4 — VENTAJAS
+══════════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div style="width:100%;padding:4vh 7vw;position:relative;z-index:2">
+    <h2 class="sh" data-v style="--i:.05">Ventajas para los <span class="px">Usuarios</span></h2>
+    <div class="g6">
+      <div class="vc2" style="--vc:#D1F8FB;--vc-bg:rgba(209,248,251,.1);--vc-bd:rgba(209,248,251,.3)" data-vs style="--i:.1">
+        <div class="vc2-ico">⚡</div><div class="vc2-big">3×</div><h4>Eficiencia</h4><p>Tareas en menos clics y menor esfuerzo cognitivo</p>
+      </div>
+      <div class="vc2" style="--vc:#6FCCD1;--vc-bg:rgba(111,204,209,.1);--vc-bd:rgba(111,204,209,.3)" data-vs style="--i:.2">
+        <div class="vc2-ico">😊</div><div class="vc2-big">88%</div><h4>Satisfacción</h4><p>No vuelven tras una mala experiencia</p>
+      </div>
+      <div class="vc2" style="--vc:#63B9BE;--vc-bg:rgba(99,185,190,.1);--vc-bd:rgba(99,185,190,.3)" data-vs style="--i:.3">
+        <div class="vc2-ico">✅</div><div class="vc2-big">-60%</div><h4>Menos errores</h4><p>El buen diseño previene acciones equivocadas</p>
+      </div>
+      <div class="vc2" style="--vc:var(--v3);--vc-bg:rgba(99,185,190,.1);--vc-bd:rgba(99,185,190,.3)" data-vs style="--i:.4">
+        <div class="vc2-ico">♿</div><div class="vc2-big">1B+</div><h4>Inclusión</h4><p>Personas con discapacidad necesitan accesibilidad</p>
+      </div>
+      <div class="vc2" style="--vc:#2F7175;--vc-bg:rgba(47,113,117,.12);--vc-bd:rgba(47,113,117,.3)" data-vs style="--i:.5">
+        <div class="vc2-ico">📱</div><div class="vc2-big">60%</div><h4>Adaptabilidad</h4><p>Del tráfico web llega desde móviles hoy</p>
+      </div>
+      <div class="vc2" style="--vc:#D1F8FB;--vc-bg:rgba(209,248,251,.08);--vc-bd:rgba(209,248,251,.25)" data-vs style="--i:.6">
+        <div class="vc2-ico">💰</div><div class="vc2-big">100×</div><h4>ROI</h4><p>Retorno por cada dólar invertido en UX</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S5 — BUENAS PRÁCTICAS
+══════════════════════════════════════════ -->
+<section class="slide" id="s5">
+  <div class="s5-wrap">
+    <div class="s5-left">
+      <div class="s5-ghost" data-v style="--i:.02">5</div>
+      <h2 class="s5-h" data-vl style="--i:.1">Buenas<br><span class="gr2">Prácticas</span></h2>
+      <p class="s5-sub" data-v style="--i:.25">Los principios que separan una interfaz mediocre de una experiencia que los usuarios no pueden soltar.</p>
+      <!-- Radar / Hexagon chart SVG -->
+      <div class="radar-wrap" data-vs style="--i:.4">
+        <svg width="170" height="170" viewBox="0 0 170 170">
+          <defs>
+            <radialGradient id="rg" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#6FCCD1" stop-opacity=".3"/>
+              <stop offset="100%" stop-color="#6FCCD1" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- Grid hexagons -->
+          <polygon points="85,15 148,48 148,122 85,155 22,122 22,48" fill="none" stroke="rgba(0,212,255,.12)" stroke-width="1"/>
+          <polygon points="85,33 132,57 132,113 85,137 38,113 38,57" fill="none" stroke="rgba(0,212,255,.1)" stroke-width="1"/>
+          <polygon points="85,52 116,68 116,103 85,119 54,103 54,68" fill="none" stroke="rgba(0,212,255,.08)" stroke-width="1"/>
+          <!-- Filled data polygon -->
+          <polygon points="85,25 140,55 135,115 85,145 35,108 40,52" fill="url(#rg)" stroke="#6FCCD1" stroke-width="1.5" opacity=".8">
+            <animateTransform attributeName="transform" type="rotate" from="0 85 85" to="360 85 85" dur="20s" repeatCount="indefinite"/>
+          </polygon>
+          <!-- Labels -->
+          <text x="85" y="10" font-family="Outfit" font-size="8" fill="#6FCCD1" text-anchor="middle">Mobile</text>
+          <text x="155" y="50" font-family="Outfit" font-size="8" fill="#D1F8FB" text-anchor="start">Jerarquía</text>
+          <text x="155" y="128" font-family="Outfit" font-size="8" fill="#63B9BE" text-anchor="start">WCAG</text>
+          <text x="85" y="168" font-family="Outfit" font-size="8" fill="#D1F8FB" text-anchor="middle">Feedback</text>
+          <text x="10" y="128" font-family="Outfit" font-size="8" fill="#2F7175" text-anchor="end">Consist.</text>
+          <text x="10" y="50" font-family="Outfit" font-size="8" fill="#63B9BE" text-anchor="end">Accesib.</text>
+          <circle cx="85" cy="85" r="4" fill="white">
+            <animate attributeName="r" values="4;7;4" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;.4;1" dur="2s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+      </div>
+    </div>
+    <div class="s5-right">
+      <div class="pr2" style="--prc:#D1F8FB" data-vr style="--i:.12">
+        <span class="pr2-n">1</span>
+        <div class="pr2-body"><h4>Mobile First</h4><p>Diseñar primero para el celular, escalar a pantallas más grandes. Más fácil expandir que reducir.</p></div>
+        <span class="pr2-badge">Prioritario</span>
+      </div>
+      <div class="pr2" style="--prc:#6FCCD1" data-vr style="--i:.22">
+        <span class="pr2-n">2</span>
+        <div class="pr2-body"><h4>Jerarquía Visual</h4><p>Tamaño, color y espacio guían la atención. El ojo sigue patrones: arriba-abajo, izquierda-derecha.</p></div>
+        <span class="pr2-badge">Esencial</span>
+      </div>
+      <div class="pr2" style="--prc:#63B9BE" data-vr style="--i:.32">
+        <span class="pr2-n">3</span>
+        <div class="pr2-body"><h4>Contraste WCAG 4.5:1</h4><p>Ratio mínimo de contraste para texto legible. Estándar internacional, exigido por ley en varios países.</p></div>
+        <span class="pr2-badge">Legal</span>
+      </div>
+      <div class="pr2" style="--prc:#63B9BE" data-vr style="--i:.42">
+        <span class="pr2-n">4</span>
+        <div class="pr2-body"><h4>Feedback Inmediato</h4><p>Confirmar cada acción con mensaje, color o animación. Sin respuesta visual el usuario abandona.</p></div>
+        <span class="pr2-badge">Crítico</span>
+      </div>
+      <div class="pr2" style="--prc:#2F7175" data-vr style="--i:.52">
+        <span class="pr2-n">5</span>
+        <div class="pr2-body"><h4>Consistencia en Toda la App</h4><p>Mismo color para el mismo tipo de acción. El usuario aprende el sistema una sola vez.</p></div>
+        <span class="pr2-badge">Design Sys</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S6 — EJEMPLOS
+══════════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div style="width:100%;padding:4vh 7vw;position:relative;z-index:2">
+    <h2 class="sh" data-v style="--i:.05">Ejemplos de <span class="px">Buen Diseño</span></h2>
+    <div class="g3">
+      <!-- Google -->
+      <div class="excrd" style="--exc:var(--cy);--exbg:linear-gradient(135deg,#2F7175,#63B9BE);--exc-bg:rgba(111,204,209,.15)" data-v style="--i:.15">
+        <div class="ex-hero">
+          <!-- animated mesh bg -->
+          <svg class="ex-mesh" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
+            <defs><filter id="blur1"><feGaussianBlur stdDeviation="3"/></filter></defs>
+            <circle cx="80" cy="70" r="60" fill="#63B9BE" opacity=".4" filter="url(#blur1)"><animate attributeName="cx" values="80;140;80" dur="5s" repeatCount="indefinite"/></circle>
+            <circle cx="220" cy="70" r="50" fill="#63B9BE" opacity=".3" filter="url(#blur1)"><animate attributeName="cx" values="220;160;220" dur="5s" repeatCount="indefinite"/></circle>
+          </svg>
+          <span class="ex-logo">Google</span>
+          <!-- Mini search UI -->
+          <svg style="position:absolute;bottom:10px;right:10px;opacity:.6" width="70" height="24" viewBox="0 0 70 24">
+            <rect width="70" height="24" rx="12" fill="white" opacity=".15"/>
+            <circle cx="58" cy="12" r="6" fill="none" stroke="white" stroke-width="1.5"/>
+            <line x1="62" y1="16" x2="66" y2="20" stroke="white" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="ex-body">
+          <span class="ex-tag">Búsqueda · Minimalismo</span>
+          <h4>Un campo, dos botones</h4>
+          <ul class="ex-pts">
+            <li>Cero distracciones en la página principal</li>
+            <li>Millones de usuarios sin necesitar instrucciones</li>
+            <li>El diseño dice: aquí haces una sola cosa</li>
+          </ul>
+          <div class="ex-bar"></div>
+        </div>
+      </div>
+      <!-- Airbnb -->
+      <div class="excrd" style="--exc:var(--pk);--exbg:linear-gradient(135deg,#2F7175,#6FCCD1);--exc-bg:rgba(47,113,117,.2)" data-v style="--i:.28">
+        <div class="ex-hero">
+          <svg class="ex-mesh" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
+            <circle cx="100" cy="70" r="70" fill="#6FCCD1" opacity=".3" filter="url(#blur1)"><animate attributeName="cy" values="70;50;70" dur="6s" repeatCount="indefinite"/></circle>
+            <circle cx="240" cy="90" r="55" fill="#2F7175" opacity=".3" filter="url(#blur1)"><animate attributeName="cy" values="90;110;90" dur="4s" repeatCount="indefinite"/></circle>
+          </svg>
+          <span class="ex-logo">Airbnb</span>
+          <svg style="position:absolute;bottom:10px;right:10px;opacity:.6" width="30" height="30" viewBox="0 0 30 30">
+            <polygon points="15,3 27,14 24,14 24,27 18,27 18,20 12,20 12,27 6,27 6,14 3,14" fill="white" opacity=".5"/>
+          </svg>
+        </div>
+        <div class="ex-body">
+          <span class="ex-tag">E-commerce · Conversión</span>
+          <h4>Imágenes que venden</h4>
+          <ul class="ex-pts">
+            <li>Fotos de alto impacto como elemento principal</li>
+            <li>Reserva en máximo 3 pasos sin fricción</li>
+            <li>Redujeron abandono drásticamente con UX</li>
+          </ul>
+          <div class="ex-bar"></div>
+        </div>
+      </div>
+      <!-- Notion -->
+      <div class="excrd" style="--exc:var(--v3);--exbg:linear-gradient(135deg,#002F32,#2F7175);--exc-bg:rgba(99,185,190,.15)" data-v style="--i:.42">
+        <div class="ex-hero">
+          <svg class="ex-mesh" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
+            <circle cx="150" cy="70" r="80" fill="#2F7175" opacity=".3" filter="url(#blur1)"><animate attributeName="r" values="80;95;80" dur="5s" repeatCount="indefinite"/></circle>
+            <circle cx="50" cy="50" r="40" fill="#2F7175" opacity=".3" filter="url(#blur1)"><animate attributeName="cx" values="50;120;50" dur="7s" repeatCount="indefinite"/></circle>
+          </svg>
+          <span class="ex-logo">Notion</span>
+          <svg style="position:absolute;bottom:10px;right:10px;opacity:.5" width="40" height="28" viewBox="0 0 40 28">
+            <rect x="0" y="0" width="38" height="4" rx="2" fill="white"/>
+            <rect x="0" y="8" width="30" height="3" rx="1.5" fill="white" opacity=".7"/>
+            <rect x="0" y="15" width="35" height="3" rx="1.5" fill="white" opacity=".5"/>
+            <rect x="0" y="22" width="22" height="3" rx="1.5" fill="white" opacity=".3"/>
+          </svg>
+        </div>
+        <div class="ex-body">
+          <span class="ex-tag">Productividad · Minimalismo</span>
+          <h4>La interfaz desaparece</h4>
+          <ul class="ex-pts">
+            <li>Sin barras agresivas ni distracciones visuales</li>
+            <li>El usuario se enfoca 100% en su contenido</li>
+            <li>Diseño que sirve al usuario, no al revés</li>
+          </ul>
+          <div class="ex-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S7 — HERRAMIENTAS
+══════════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div style="width:100%;padding:4vh 7vw;position:relative;z-index:2">
+    <h2 class="sh" data-v style="--i:.05">Herramientas <span class="gx">Profesionales</span></h2>
+    <div class="tg">
+      <div class="tc2" style="--tcol:#D1F8FB;--pct:95%" data-v style="--i:.1">
+        <div class="tc2-letter">F</div><div class="tc2-dot"></div>
+        <div class="tc2-head"><span class="tc2-name">Figma</span><span class="tc2-cat">Diseño</span></div>
+        <p>Diseño colaborativo en tiempo real. Estándar de la industria para UI, prototipado y handoff.</p>
+        <div class="tc2-bar"><div class="tc2-fill"></div></div>
+      </div>
+      <div class="tc2" style="--tcol:#6FCCD1;--pct:80%" data-v style="--i:.2">
+        <div class="tc2-letter">X</div><div class="tc2-dot"></div>
+        <div class="tc2-head"><span class="tc2-name">Adobe XD</span><span class="tc2-cat">Prototipado</span></div>
+        <p>Wireframes e interfaces interactivas. Parte del ecosistema Adobe para equipos de diseño.</p>
+        <div class="tc2-bar"><div class="tc2-fill"></div></div>
+      </div>
+      <div class="tc2" style="--tcol:#63B9BE;--pct:90%" data-v style="--i:.3">
+        <div class="tc2-letter">T</div><div class="tc2-dot"></div>
+        <div class="tc2-head"><span class="tc2-name">Tailwind CSS</span><span class="tc2-cat">Desarrollo</span></div>
+        <p>Framework utility-first para construir interfaces modernas y responsivas con velocidad.</p>
+        <div class="tc2-bar"><div class="tc2-fill"></div></div>
+      </div>
+      <div class="tc2" style="--tcol:#6FCCD1;--pct:72%" data-v style="--i:.4">
+        <div class="tc2-letter">S</div><div class="tc2-dot"></div>
+        <div class="tc2-head"><span class="tc2-name">Storybook</span><span class="tc2-cat">Componentes</span></div>
+        <p>Documenta y prueba componentes en aislamiento. Esencial para design systems.</p>
+        <div class="tc2-bar"><div class="tc2-fill"></div></div>
+      </div>
+      <div class="tc2" style="--tcol:#D1F8FB;--pct:88%" data-v style="--i:.5">
+        <div class="tc2-letter">L</div><div class="tc2-dot"></div>
+        <div class="tc2-head"><span class="tc2-name">Lighthouse</span><span class="tc2-cat">Auditoría</span></div>
+        <p>De Google. Evalúa rendimiento, accesibilidad y SEO. Puntaje del 0 al 100.</p>
+        <div class="tc2-bar"><div class="tc2-fill"></div></div>
+      </div>
+      <div class="tc2" style="--tcol:#2F7175;--pct:70%" data-v style="--i:.6">
+        <div class="tc2-letter">H</div><div class="tc2-dot"></div>
+        <div class="tc2-head"><span class="tc2-name">Hotjar</span><span class="tc2-cat">Analítica UX</span></div>
+        <p>Mapas de calor y grabaciones reales para ver exactamente cómo usan los usuarios tu UI.</p>
+        <div class="tc2-bar"><div class="tc2-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S8 — CONCLUSIÓN
+══════════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div class="s8-wrap">
+    <p class="s8-eyebrow" data-vc style="--i:.05">/ conclusión · grupo 4 · 2026</p>
+    <p class="s8-quote" data-v style="--i:.22" id="s8quote">
+      "Un buen diseño no es solo estética —<br>
+      es la diferencia entre una app que los usuarios<br>
+      <em>aman</em> y una que abandonan."
+    </p>
+    <div class="neon-line" style="width:60px" data-vs style="--i:.38"></div>
+    <!-- Stats row -->
+    <div class="s8-stats-row" data-v style="--i:.48" style="width:100%;max-width:700px">
+      <div class="s8-stat"><div class="s8-sn" style="color:var(--yw)">88%</div><div class="s8-sl">no regresa tras mala UX</div></div>
+      <div class="s8-stat"><div class="s8-sn" style="color:#6FCCD1">$100</div><div class="s8-sl">ROI por $1 en UX</div></div>
+      <div class="s8-stat"><div class="s8-sn" style="color:#63B9BE">0.05s</div><div class="s8-sl">para formarse una opinión</div></div>
+      <div class="s8-stat"><div class="s8-sn" style="color:#D1F8FB">94%</div><div class="s8-sl">primeras impresiones = diseño</div></div>
+    </div>
+    <div class="s8-takes" data-v style="--i:.6">
+      <div class="s8-take" style="--td:#D1F8FB"><div class="s8-tdot"></div>Diseño centrado en el usuario = mayor adopción y retención</div>
+      <div class="s8-take" style="--td:#6FCCD1"><div class="s8-tdot"></div>Buenas prácticas UI = inversión con retorno 100:1</div>
+      <div class="s8-take" style="--td:#63B9BE"><div class="s8-tdot"></div>Accesibilidad = estándar ético y en muchos países, legal</div>
+    </div>
+    <p class="s8-footer" data-v style="--i:.75">Grupo 4 · Diseño de Software de Interfaces · Universidad Cooperativa de Colombia · 2026</p>
+  </div>
+</section>
+
+</div><!-- /DECK -->
+
+<div id="PROG"></div>
+<div id="DOTS"></div>
+<div id="HINT">← → NAVEGAR · ESPACIO · CLICK</div>
+<div id="CTR"><b id="CN">1</b> / <span id="TOTAL">9</span></div>
+
+<style>
+@keyframes float1{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(1deg)}}
+@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px) rotate(-2deg)}}
+@keyframes float3{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-16px) scale(1.03)}}
+@keyframes float4{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-12px) translateX(5px)}}
+</style>
+
+<script>
+// ══════════════════════════════════════
+// CURSOR — trail particles
+// ══════════════════════════════════════
+const CC = document.getElementById('curCanvas');
+const CX = CC.getContext('2d');
+let mx=window.innerWidth/2, my=window.innerHeight/2;
+let rx=mx, ry=my;
+const trail=[];
+const TCOLS=['#D1F8FB','#6FCCD1','#63B9BE','#2F7175','#6FCCD1'];
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  trail.push({x:mx,y:my,r:3+Math.random()*3,a:1,c:TCOLS[Math.floor(Math.random()*TCOLS.length)],vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2-1});
+  if(trail.length>20)trail.shift();
+});
+(function curLoop(){
+  const el=document.getElementById('CUR');
+  rx+=(mx-rx)*.16; ry+=(my-ry)*.16;
+  el.style.left=(mx-40)+'px'; el.style.top=(my-40)+'px';
+  CX.clearRect(0,0,80,80);
+  // outer ring
+  CX.beginPath();CX.arc(40,40,18,0,Math.PI*2);
+  CX.strokeStyle='rgba(0,212,255,.4)';CX.lineWidth=1;CX.stroke();
+  // inner dot
+  CX.beginPath();CX.arc(40,40,5,0,Math.PI*2);
+  CX.fillStyle='#D1F8FB';CX.fill();
+  // trail relative to cursor pos
+  trail.forEach((t,i)=>{
+    t.x+=t.vx; t.y+=t.vy; t.a-=.05; t.r*=.95;
+    if(t.a<=0)return;
+    const lx=t.x-mx+40, ly=t.y-my+40;
+    CX.beginPath();CX.arc(lx,ly,t.r,0,Math.PI*2);
+    CX.fillStyle=t.c;CX.globalAlpha=t.a*0.6;CX.fill();
+  });
+  CX.globalAlpha=1;
+  requestAnimationFrame(curLoop);
+})();
+document.querySelectorAll('.card3d,.vc2,.pr2,.pc,.excrd,.tc2,.s8-take,.dot').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{CC.style.width=CC.style.height='120px';CC.width=CC.height=120});
+  el.addEventListener('mouseleave',()=>{CC.style.width=CC.style.height='80px';CC.width=CC.height=80});
+});
+
+// ══════════════════════════════════════
+// MASTER CANVAS — aurora nebula
+// ══════════════════════════════════════
+const MC=document.getElementById('MASTER');
+const MCX=MC.getContext('2d');
+MC.width=window.innerWidth; MC.height=window.innerHeight;
+window.addEventListener('resize',()=>{MC.width=window.innerWidth;MC.height=window.innerHeight});
+const NEBULA_COLS=['#002F32','#2F7175','#2F7175','#63B9BE','#00D4FF','#D1F8FB'];
+const nebOrbs=Array.from({length:12},()=>({
+  x:Math.random()*MC.width, y:Math.random()*MC.height,
+  r:150+Math.random()*250, vx:(Math.random()-.5)*.12, vy:(Math.random()-.5)*.12,
+  c:NEBULA_COLS[Math.floor(Math.random()*NEBULA_COLS.length)], a:.04+Math.random()*.06
+}));
+const nebPts=Array.from({length:120},()=>({
+  x:Math.random()*MC.width, y:Math.random()*MC.height,
+  r:.3+Math.random()*1.8, vx:(Math.random()-.5)*.2, vy:(Math.random()-.5)*.2,
+  c:NEBULA_COLS[Math.floor(Math.random()*NEBULA_COLS.length)], a:.08+Math.random()*.3
+}));
+// connections
+(function masterLoop(){
+  MCX.clearRect(0,0,MC.width,MC.height);
+  nebOrbs.forEach(o=>{
+    o.x+=o.vx; o.y+=o.vy;
+    if(o.x<-o.r)o.x=MC.width+o.r; if(o.x>MC.width+o.r)o.x=-o.r;
+    if(o.y<-o.r)o.y=MC.height+o.r; if(o.y>MC.height+o.r)o.y=-o.r;
+    const g=MCX.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r);
+    g.addColorStop(0,o.c+(Math.floor(o.a*255).toString(16).padStart(2,'0')));
+    g.addColorStop(1,'transparent');
+    MCX.beginPath();MCX.arc(o.x,o.y,o.r,0,Math.PI*2);
+    MCX.fillStyle=g;MCX.fill();
+  });
+  // connections between close pts
+  for(let i=0;i<nebPts.length;i++){
+    const p=nebPts[i];
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=MC.width; if(p.x>MC.width)p.x=0;
+    if(p.y<0)p.y=MC.height; if(p.y>MC.height)p.y=0;
+    for(let j=i+1;j<nebPts.length;j++){
+      const q=nebPts[j];
+      const dx=p.x-q.x, dy=p.y-q.y, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<90){
+        MCX.beginPath();MCX.moveTo(p.x,p.y);MCX.lineTo(q.x,q.y);
+        const alpha=Math.floor((1-d/90)*14).toString(16).padStart(2,'0');
+        MCX.strokeStyle=p.c+alpha;MCX.lineWidth=.4;MCX.stroke();
+      }
+    }
+    MCX.beginPath();MCX.arc(p.x,p.y,p.r,0,Math.PI*2);
+    MCX.fillStyle=p.c;MCX.globalAlpha=p.a;MCX.fill();
+  }
+  MCX.globalAlpha=1;
+  requestAnimationFrame(masterLoop);
+})();
+
+// ══════════════════════════════════════
+// 3D CARD TILT on hover
+// ══════════════════════════════════════
+document.querySelectorAll('.card3d').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`translateY(-6px) scale(1.01) rotateX(${-y*10}deg) rotateY(${x*10}deg)`;
+    card.style.transformStyle='preserve-3d';
+  });
+  card.addEventListener('mouseleave',()=>{card.style.transform='';});
+});
+
+// ══════════════════════════════════════
+// PARTICLE BURST on slide change
+// ══════════════════════════════════════
+function burst(){
+  const canvas=document.createElement('canvas');
+  canvas.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:1000';
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx=canvas.getContext('2d');
+  const cols=['#D1F8FB','#6FCCD1','#63B9BE','#2F7175','#D1F8FB','#63B9BE'];
+  const pts=Array.from({length:80},()=>({
+    x:window.innerWidth/2, y:window.innerHeight/2,
+    vx:(Math.random()-.5)*18, vy:(Math.random()-.5)*14-4,
+    r:2+Math.random()*4, a:1, c:cols[Math.floor(Math.random()*cols.length)],
+    g:0.4+Math.random()*0.3
+  }));
+  let alive=true;
+  function draw(){
+    if(!alive)return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let any=false;
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.a-=.022; p.r*=.97;
+      if(p.a<=0)return; any=true;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();
+      // glow
+      ctx.shadowBlur=10;ctx.shadowColor=p.c;ctx.fill();
+      ctx.shadowBlur=0;
+    });
+    ctx.globalAlpha=1;
+    if(any)requestAnimationFrame(draw);
+    else{alive=false;document.body.removeChild(canvas);}
+  }
+  draw();
+}
+
+// ══════════════════════════════════════
+// SLIDES ENGINE
+// ══════════════════════════════════════
+const slides=Array.from(document.querySelectorAll('.slide'));
+const N=slides.length;
+let cur=0, busy=false;
+const dotsEl=document.getElementById('DOTS');
+for(let i=0;i<N;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  d.addEventListener('click',()=>go(i));
+  dotsEl.appendChild(d);
+}
+// Update total count
+document.getElementById('TOTAL').textContent=N;
+function updateUI(){
+  document.getElementById('CN').textContent=cur+1;
+  document.getElementById('PROG').style.width=((cur+1)/N*100)+'%';
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+}
+
+// ── PER-SLIDE SPECIAL FX ────────────────────────
+function onSlideEnter(n){
+  // S1: glitch title flicker on load
+  if(n===0){
+    const glitch=document.querySelector('.glitch');
+    if(glitch){
+      setTimeout(()=>{
+        glitch.style.animation='glitch1 .15s steps(1) 3, none .1s .45s forwards';
+      },1000);
+    }
+  }
+  // S3: Animate card numbers counting
+  if(n===2){
+    document.querySelectorAll('#s3 .cstat').forEach((el,i)=>{
+      el.style.opacity='0';
+      el.style.transform='translateY(10px)';
+      setTimeout(()=>{
+        el.style.transition='all .5s cubic-bezier(.16,1,.3,1)';
+        el.style.opacity='1';
+        el.style.transform='none';
+      },600+i*150);
+    });
+  }
+  // S4: Animate stat numbers counting up
+  if(n===3){
+    document.querySelectorAll('#s4 .vc2-big').forEach((el,i)=>{
+      const final=el.textContent;
+      el.style.opacity='0';
+      setTimeout(()=>{
+        el.style.opacity='1';
+        el.style.transition='all .4s ease';
+        // pop effect
+        el.style.transform='scale(1.4)';
+        setTimeout(()=>el.style.transform='scale(1)',200);
+      },700+i*120);
+    });
+  }
+  // S5: animate radar
+  if(n===4){
+    const radar=document.querySelector('#s5 svg polygon:nth-child(5)');
+    if(radar){ radar.style.strokeDasharray='500'; radar.style.strokeDashoffset='500'; radar.style.transition='stroke-dashoffset 2s ease 0.5s'; setTimeout(()=>radar.style.strokeDashoffset='0',100); }
+  }
+  // S7: fill progress bars on hover already — also do a quick flash on enter
+  if(n===6){
+    document.querySelectorAll('#s7 .tc2-fill').forEach((el,i)=>{
+      el.style.width='0';
+      setTimeout(()=>{
+        el.style.transition='width 1.4s cubic-bezier(.16,1,.3,1)';
+        el.style.width=el.parentElement.parentElement.style.getPropertyValue('--pct');
+      },400+i*100);
+    });
+  }
+  // S8: typewriter on quote
+  if(n===7){
+    const q=document.getElementById('s8quote');
+    if(q && !q.dataset.typed){
+      q.dataset.typed='1';
+      // already visible via anim — add blinking cursor
+      q.style.borderRight='2px solid var(--cy)';
+      setTimeout(()=>{ q.style.borderRight='none'; },3000);
+    }
+    // Count-up stats
+    const stats=[
+      {el:document.querySelector('#s8 .s8-stat:nth-child(1) .s8-sn'), end:88, suffix:'%', color:'var(--yw)'},
+      {el:document.querySelector('#s8 .s8-stat:nth-child(2) .s8-sn'), end:100, prefix:'$', color:'var(--cy)'},
+      {el:document.querySelector('#s8 .s8-stat:nth-child(3) .s8-sn'), end:0.05, suffix:'s', dec:2, color:'var(--pk)'},
+      {el:document.querySelector('#s8 .s8-stat:nth-child(4) .s8-sn'), end:94, suffix:'%', color:'var(--gn)'},
+    ];
+    stats.forEach((s,i)=>{
+      if(!s.el) return;
+      s.el.textContent='0'+(s.suffix||'');
+      setTimeout(()=>{
+        const dur=1200, steps=40, stepT=dur/steps;
+        let step=0;
+        const t=setInterval(()=>{
+          step++;
+          const v=s.end*(step/steps);
+          const disp=(s.dec ? v.toFixed(s.dec) : Math.floor(v));
+          s.el.textContent=(s.prefix||'')+disp+(s.suffix||'');
+          if(step>=steps){ clearInterval(t); s.el.textContent=(s.prefix||'')+s.end+(s.suffix||''); }
+        },stepT);
+      },400+i*180);
+    });
+  }
+}
+
+function go(n){
+  if(n===cur||busy||n<0||n>=N)return;
+  busy=true;
+  burst();
+  const prev=slides[cur], next=slides[n];
+  cur=n;
+  // reset css anims on next slide elements
+  next.querySelectorAll('[data-v],[data-vl],[data-vr],[data-vs],[data-vc],[data-vw],[data-vf]').forEach(el=>{
+    el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+  });
+  // reset slide-specific elements
+  next.querySelectorAll('.card3d,.vc2,.pr2,.excrd,.tc2,.s8-stat,.s8-take,.s1-hr-anim,.tc2-fill').forEach(el=>{
+    el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+  });
+  prev.classList.add('EXIT');
+  next.classList.add('ENTER','LIVE');
+  setTimeout(()=>{
+    prev.classList.remove('LIVE','EXIT');
+    next.classList.remove('ENTER');
+    busy=false;
+    updateUI();
+    onSlideEnter(cur);
+  },700);
+}
+
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown',' '].includes(e.key)){e.preventDefault();go(cur+1);}
+  if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();go(cur-1);}
+});
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1))});
+document.getElementById('DECK').addEventListener('click',e=>{
+  if(!e.target.closest('.dot,.card3d,.vc2,.pr2,.pc,.excrd,.tc2,.s8-take'))go(cur+1);
+});
+
+// ══════════════════════════════════════
+// IMAGE MODAL FUNCTIONALITY
+// ══════════════════════════════════════
+const imgModal = document.createElement('div');
+imgModal.id = 'imgModal';
+imgModal.innerHTML = `
+  <div class="modal-back-btn" id="modalBackBtn"></div>
+  <img id="modalImg" src="" alt="Full size image">
+`;
+document.body.appendChild(imgModal);
+
+const modalImg = document.getElementById('modalImg');
+const modalBackBtn = document.getElementById('modalBackBtn');
+
+// Add click handlers to image containers
+document.querySelectorAll('.s1b-img-container').forEach(container => {
+  container.addEventListener('click', function() {
+    const fullImgSrc = this.getAttribute('data-fullimg');
+    if (fullImgSrc) {
+      modalImg.src = fullImgSrc;
+      imgModal.classList.add('show');
+    }
+  });
+});
+
+// Close modal on back button click
+modalBackBtn.addEventListener('click', function(e) {
+  e.stopPropagation();
+  imgModal.classList.remove('show');
+});
+
+// Close modal on background click
+imgModal.addEventListener('click', function(e) {
+  if (e.target === imgModal) {
+    imgModal.classList.remove('show');
+  }
+});
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && imgModal.classList.contains('show')) {
+    imgModal.classList.remove('show');
+  }
+});
+
+// fire initial
+updateUI();
+setTimeout(()=>onSlideEnter(0), 400);
+</script>
+</body>
+</html>
